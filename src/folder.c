@@ -1,3 +1,4 @@
+#include <ext_c_ultilities.h>
 #include "int_c_ultilities.h"
 #include <string.h>
 #include <sys/types.h>
@@ -29,8 +30,7 @@ CU(remove_dir) (char *path, int *e)
 		{
 			if(strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0)
 			{
-				err = __LINE__;
-				break;
+				continue;
 			}
 			sprintf(tmp, "%s/%s", path, dent->d_name);
 			if (stat(tmp, &st) < 0)
@@ -43,9 +43,11 @@ CU(remove_dir) (char *path, int *e)
 			fname = calloc(1, zn);
 			sprintf(fname, "%s/%s", path, dent->d_name);
 
+			fprintf(stdout, "fname: %s\n\n", fname);
+
 			if (S_ISDIR(st.st_mode) && fname) 
 			{
-				CU(remove_dir) (fname, e);
+				c_ultilities_remove_dir(fname, e);
 			}
 			else if(S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
 				if(fname) {
@@ -60,9 +62,13 @@ CU(remove_dir) (char *path, int *e)
 			}
 		}
 		closedir(srcdir);
+		if(err)
+		{
+			break;
+		}
+		fprintf(stdout, "path: %s\n\n", path);
 		err = rmdir(path);
 		if(err) {
-			;//perror("rmdir");
 			err = __LINE__;
 		}
 	}

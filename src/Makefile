@@ -1,2 +1,4 @@
-all: int_c_ultilities.h folder.c
-	gcc -Wall -shared -o libhello.so -fPIC folder.c int_c_ultilities.h
+INCLUDE += -I../include
+TARGET = libc_ultilities
+all:
+	gcc -Wall -shared -o ${TARGET}.so -fPIC folder.c ${INCLUDE}
