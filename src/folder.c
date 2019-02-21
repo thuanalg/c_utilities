@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-CU(remove_dir) (char *path, int *e)
+void CU(remove_dir) 
+(char *path, int *e)
 {
 	int err = 0;
 	DIR* srcdir = 0;
@@ -46,7 +46,8 @@ CU(remove_dir) (char *path, int *e)
 
 			if (S_ISDIR(st.st_mode) && fname) 
 			{
-				c_ultilities_remove_dir(fname, e);
+				CU(remove_dir)
+					(fname, e);
 			}
 			else if(S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
 				if(fname) {
@@ -81,7 +82,7 @@ CU(remove_dir) (char *path, int *e)
 	}
 } 
 
-CU(create_dir) (char *path, int *e)
+void CU(create_dir) (char *path, int *e)
 {
 	
 }

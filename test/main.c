@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "\nPlease enter test directory.\n");
 		return EXIT_FAILURE;
 	}
-	c_ultilities_remove_dir(argv[1], &err);
+	CU(remove_dir)(argv[1], &err);
 	if(err)
 	{
 		fprintf(stdout, "\nPlease enter test directory. err = %d\n", err);
