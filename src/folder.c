@@ -54,6 +54,12 @@ void CU(remove_dir)
 					err = remove(fname) ? __LINE__ : 0;
 				}
 			}
+
+			if(fname) {
+				free(fname);
+				fname = 0;
+			}
+
 			if(err) {
 				break;
 			}
