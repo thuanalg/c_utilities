@@ -16,6 +16,13 @@ typedef enum {
   CM_EXIT,
 } XYZ_COMM_;
 
+typedef struct {
+  int nbyte;
+  int sess;
+  unsigned int pid;
+  char text;
+} XYZ_COMM_FMT;
+
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        (20 << 1)
