@@ -8,7 +8,8 @@ extern "C" {
 
 #define _X(u) AAA_##u
 
-int _X(sqlite3_open)(char *path);
+int _X(xyz_open)(char *path);
+int _X(xyz_close)(int session);
 
 #ifdef __cplusplus
 }

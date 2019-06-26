@@ -24,10 +24,10 @@ int _X(xyz_close)(int session)
   do
   {
     if(data_shm_xyz){
-      err = unmap(data_shm_xyz, UTV_KHL_SZ);
+      err = munmap(data_shm_xyz, UTV_KHL_SZ);
     }
     if(comm_shm_xyz){
-      err = unmap(comm_shm_xyz, UTV_KHL_SZ);
+      err = munmap(comm_shm_xyz, UTV_KHL_SZ);
     }
   }
   while(0);
