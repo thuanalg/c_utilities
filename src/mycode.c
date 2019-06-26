@@ -8,17 +8,72 @@
 #include <fcntl.h> /* For O_* constants */
 #include <pthread.h>
 
-static int _X(init_service)(char *path, void **, int);
-static int _X(rem_sess)(int sess);
-static int _X(xyz_register)(int *sess);
+
+typedef enum {
+  CM_REGISTER,
+  CM_QUERY,
+  
+  CM_EXIT,
+} XYZ_COMM_;
+
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        (20 << 1)
 static void * data_shm_xyz = 0;
 static char my_key[1024];
+
+
+static int _X(init_service)(char *path, void **, int);
+static int _X(rem_sess)(int sess);
+static int _X(xyz_register)(int *sess);
+static int _X(xyz_cmd_fmt)(int sess, int cmd, 
+  char *cmdtext, char **out, int *);
+
 /************************************************************************
 @return: session
 ************************************************************************/
+int _X(xyz_cmd_fmt)(int sess, int cmd, 
+char *cmdtext, char **out, int *nbyte)
+{
+  int err = 0;
+  do
+  {
+    if(!nbyte)
+    {
+      err = __LINE__;
+      break;
+    }
+    if(!out)
+    {
+      err = __LINE__;
+      break;
+    }
+    *nbyte = (int) (4 * sizeof(int) + strlen(cmdtext) + 1);
+    *out = realloc(*out, *nbyte);
+    if(!(*out))
+    {
+      err = __LINE__;
+      break;
+    }
+    memset(*out, 0, *nbyte);
+    {
+      int s = 0;
+      unsigned int pid = (unsigned int)getpid();
+      memcpy(*out + s * sizeof(int), nbyte, sizeof(int));
+      s++;
+      memcpy(*out + s * sizeof(int), &sess, sizeof(int));
+      s++;
+      memcpy(*out + s * sizeof(int), &pid, sizeof(int));
+      s++;
+      memcpy(*out + s * sizeof(int), &cmd, sizeof(int));
+      s++;
+      memcpy(*out + s * sizeof(int), cmdtext, strlen(cmdtext));
+    }
+  }
+  while(0);
+  return err;
+}
+
 int _X(xyz_register)(int *sess)
 {
   int err = 0;
