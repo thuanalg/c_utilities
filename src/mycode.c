@@ -9,37 +9,65 @@
 #include <pthread.h>
 
 static int _X(init_service)(char *path, void **, int);
+static int _X(rem_sess)(int sess);
+static int _X(xyz_register)(int *sess);
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        (20 << 1)
 static void * data_shm_xyz = 0;
-static void * comm_shm_xyz  = 0;
-static char sta_shm_key[1024];
+static char my_key[1024];
 /************************************************************************
 @return: session
 ************************************************************************/
+int _X(xyz_register)(int *sess)
+{
+  int err = 0;
+  do
+  {
+
+  }
+  while(0);
+  return err;
+}
+
+int _X(rem_sess)(int sess)
+{
+  int err = 0;
+  do
+  {
+
+  }
+  while(0);
+  return err;
+}
+
 int _X(xyz_close)(int session)
 {
   int err = 0;
   do
   {
-    if(data_shm_xyz){
+    err = _X(rem_sess)(session);
+    if(data_shm_xyz)
+    {
       err = munmap(data_shm_xyz, UTV_KHL_SZ);
     }
-    if(comm_shm_xyz){
-      err = munmap(comm_shm_xyz, UTV_KHL_SZ);
+    if(my_key[0])
+    {
+      err = shm_unlink(my_key);
     }
   }
   while(0);
   return err;
 }
+
 int _X(xyz_open)(char *path)
 {
   int err;
+  int sess = 0;
   do
   {
     err = _X(init_service)(path, &data_shm_xyz, UTV_KHL_SZ);
-    err = _X(init_service)(path, &comm_shm_xyz, UTV_KHL_SZ);
+    err = _X(xyz_register)(&sess);
   }
   while(0);
 
@@ -50,7 +78,7 @@ int _X(xyz_open)(char *path)
 int _X(init_service)(char *path, void **out, int sz)
 {
   char create = 0;
-  char *key = sta_shm_key;
+  char *key = my_key;
   int err = 0;
   int shm = 0;
   void *data = 0;
