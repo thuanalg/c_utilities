@@ -40,12 +40,15 @@ XYZ_GROUP_COMMAND;
 
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
-#define UTV_KHL_SZ        (20 << 1)
+#define UTV_KHL_SZ        ( 1024 * 1024)
+#define UTV_CMD_SZ        ( 50 * 1024)
+#define UTV_RES_SZ        ( UTV_KHL_SZ - UTV_CMD_SZ)
 static void * data_shm_xyz = 0;
 static char my_key[1024];
 
 
 static int _X(init_service)(char *path, void **, int);
+static int _X(init_shm_mtx)(char*);
 static int _X(rem_sess)(int sess);
 static int _X(xyz_register)(int *sess);
 static int _X(xyz_cmd_fmt)(int sess, int cmd, 
@@ -75,6 +78,7 @@ char *cmdtext, XYZ_COMMAND **out)
 {
   int err = 0;
   int n = 0;
+  int sz  = 0;
   do
   {
     XYZ_COMMAND *p = 0;
@@ -83,7 +87,8 @@ char *cmdtext, XYZ_COMMAND **out)
       err = __LINE__;
       break;
     }
-    n = (int) (sizeof(XYZ_COMMAND) + strlen(cmdtext) + 1);
+    sz = cmdtext ? strlen(cmdtext) : 0;
+    n = (int) (sizeof(XYZ_COMMAND) + sz + 1);
     p = realloc(p, n);
     if(!(p))
     {
@@ -100,8 +105,10 @@ char *cmdtext, XYZ_COMMAND **out)
     p->sess = sess;
     p->pid = (unsigned int) getpid();
     p->cmd_id = cmd;
-    memcpy(&(p->cmd), cmdtext, 1 + strlen(cmdtext));
-
+    if(cmdtext)
+    {
+      memcpy(&(p->cmd), cmdtext, sz + 1);
+    }
     *out = p;
   }
   while(0);
@@ -204,11 +211,44 @@ int _X(init_service)(char *path, void **out, int sz)
       break;
     }
     memset((*out), 0, UTV_KHL_SZ);
+    {
+      char *cmd_mtx = (char*)(*out); 
+      char *res_mtx = cmd_mtx + UTV_CMD_SZ;
+      err  = _X(init_shm_mtx)(cmd_mtx);
+      err  = _X(init_shm_mtx)(res_mtx);
+    }
   }
   while(0);
   if(shm > -1)
   {
     err = close(shm); 
   }
+  return err;
+}
+
+int _X(init_shm_mtx)(char *obj)
+{
+  int err = 0;
+  pthread_mutex_t *shm_mtx = (pthread_mutex_t *) obj;
+  do
+  {
+    if(!shm_mtx)
+    {
+      err = __LINE__;
+      break;
+    }
+    pthread_mutex_t *shm_mtx = 0;
+
+    pthread_mutexattr_t psharedm;
+    pthread_mutexattr_init(&psharedm);
+    pthread_mutexattr_setpshared(&psharedm,
+        PTHREAD_PROCESS_SHARED);
+    err = pthread_mutex_init(shm_mtx, &psharedm);                                                           
+    if(err)
+    {
+      break;
+    }
+  }
+  while(0);
   return err;
 }
