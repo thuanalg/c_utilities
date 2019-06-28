@@ -49,7 +49,7 @@ static int _X(init_service)(char *path, void **, int);
 static int _X(rem_sess)(int sess);
 static int _X(xyz_register)(int *sess);
 static int _X(xyz_cmd_fmt)(int sess, int cmd, 
-  char *cmdtext, char **out, int *);
+  char *cmdtext, XYZ_COMMAND **out);
 /************************************************************************
 * Format of memory segment
 *      @COMMANFD|@DATARESULT
@@ -71,42 +71,38 @@ static int _X(xyz_cmd_fmt)(int sess, int cmd,
 @return: session
 ************************************************************************/
 int _X(xyz_cmd_fmt)(int sess, int cmd, 
-char *cmdtext, char **out, int *nbyte)
+char *cmdtext, XYZ_COMMAND **out)
 {
   int err = 0;
+  int n = 0;
   do
   {
     XYZ_COMMAND *p = 0;
-    if(!nbyte)
-    {
-      err = __LINE__;
-      break;
-    }
     if(!out)
     {
       err = __LINE__;
       break;
     }
-    *nbyte = (int) (sizeof(XYZ_COMMAND) + strlen(cmdtext) + 1);
-    p = realloc(*out, *nbyte);
+    n = (int) (sizeof(XYZ_COMMAND) + strlen(cmdtext) + 1);
+    p = realloc(p, n);
     if(!(p))
     {
       err = __LINE__;
       break;
     }
-    memset(p, 0, *nbyte);
+    memset(p, 0, n);
     //@totalbytes: 4 bytes (sizeof(int)), mandatory
     //@session:    4 bytes(sizeof(int)), mandatory
     //@processID:  4 bytes, mandatory
     //@cmdID:      4 bytes, mandatory
     //@cmdText:    unpredictable, optional
-    p->nbyte = *nbyte;
+    p->nbyte = n;
     p->sess = sess;
     p->pid = (unsigned int) getpid();
     p->cmd_id = cmd;
     memcpy(&(p->cmd), cmdtext, 1 + strlen(cmdtext));
 
-    *out = (char*) p;
+    *out = p;
   }
   while(0);
   return err;
