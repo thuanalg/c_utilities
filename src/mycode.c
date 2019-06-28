@@ -23,6 +23,14 @@ typedef struct {
   char text;
 } XYZ_COMM_FMT;
 
+typedef struct
+{
+  pthread_mutex_t mtx;
+  unsigned int lpid;
+  int sz_cmds;
+  char cmds;
+}XYZ_COMMAND;
+
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        (20 << 1)
@@ -35,6 +43,22 @@ static int _X(rem_sess)(int sess);
 static int _X(xyz_register)(int *sess);
 static int _X(xyz_cmd_fmt)(int sess, int cmd, 
   char *cmdtext, char **out, int *);
+/************************************************************************
+* Format of memory segment
+*      @COMMANFD|@DATARESULT
+*      sizeof(@COMMAND) = 50 * 1024 (50 KB)
+*      sizeof(@DATARESULT) = (1024 - 50) * 1024 == (1024 - 50) KB.
+* @COMMAND detail:
+*    mutex|lockingId|totalcmds|list_commands
+*    @mutex: sizeof(mutex), mandatory. Fixed size
+     @lockingId: process Id owns this segment memory. Fixed size =
+                 sizeof(int)
+*    @totalZcommands: sizeof(int), the size of total current command(s)  
+*                    ,mandatory. Fixed size.
+*    @list_commands: a group command(s), dynamic size. 
+*                      UTF-8 referrence
+************************************************************************/
+
 
 /************************************************************************
 @return: session
@@ -64,6 +88,12 @@ char *cmdtext, char **out, int *nbyte)
     }
     memset(*out, 0, *nbyte);
     {
+      //Format: totalbytes|session|process id of sender|cmdID|cmdText
+      //@totalbytes: 4 bytes (sizeof(int)), mandatory
+      //@session:    4 bytes(sizeof(int)), mandatory
+      //@processID:  4 bytes, mandatory
+      //@cmdID:      4 bytes, mandatory
+      //@cmdText:    unpredictable, optional
       int s = 0;
       unsigned int pid = (unsigned int)getpid();
       memcpy(*out + s * sizeof(int), nbyte, sizeof(int));
@@ -74,7 +104,7 @@ char *cmdtext, char **out, int *nbyte)
       s++;
       memcpy(*out + s * sizeof(int), &cmd, sizeof(int));
       s++;
-      memcpy(*out + s * sizeof(int), cmdtext, strlen(cmdtext));
+      memcpy(*out + s * sizeof(int), cmdtext, 1 + strlen(cmdtext));
     }
   }
   while(0);
