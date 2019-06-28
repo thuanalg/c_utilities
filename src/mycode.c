@@ -20,16 +20,23 @@ typedef struct {
   int nbyte;
   int sess;
   unsigned int pid;
-  char text;
-} XYZ_COMM_FMT;
+  int cmd_id;
+  char cmd;
+} XYZ_COMMAND;
 
+      //@totalbytes: 4 bytes (sizeof(int)), mandatory
+      //@session:    4 bytes(sizeof(int)), mandatory
+      //@processID:  4 bytes, mandatory
+      //@cmdID:      4 bytes, mandatory
+      //@cmdText:    unpredictable, optional
 typedef struct
 {
   pthread_mutex_t mtx;
   unsigned int lpid;
   int sz_cmds;
   char cmds;
-}XYZ_COMMAND;
+}
+XYZ_GROUP_COMMAND;
 
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
@@ -69,6 +76,7 @@ char *cmdtext, char **out, int *nbyte)
   int err = 0;
   do
   {
+    XYZ_COMMAND *p = 0;
     if(!nbyte)
     {
       err = __LINE__;
@@ -79,33 +87,26 @@ char *cmdtext, char **out, int *nbyte)
       err = __LINE__;
       break;
     }
-    *nbyte = (int) (4 * sizeof(int) + strlen(cmdtext) + 1);
-    *out = realloc(*out, *nbyte);
-    if(!(*out))
+    *nbyte = (int) (sizeof(XYZ_COMMAND) + strlen(cmdtext) + 1);
+    p = realloc(*out, *nbyte);
+    if(!(p))
     {
       err = __LINE__;
       break;
     }
-    memset(*out, 0, *nbyte);
-    {
-      //Format: totalbytes|session|process id of sender|cmdID|cmdText
-      //@totalbytes: 4 bytes (sizeof(int)), mandatory
-      //@session:    4 bytes(sizeof(int)), mandatory
-      //@processID:  4 bytes, mandatory
-      //@cmdID:      4 bytes, mandatory
-      //@cmdText:    unpredictable, optional
-      int s = 0;
-      unsigned int pid = (unsigned int)getpid();
-      memcpy(*out + s * sizeof(int), nbyte, sizeof(int));
-      s++;
-      memcpy(*out + s * sizeof(int), &sess, sizeof(int));
-      s++;
-      memcpy(*out + s * sizeof(int), &pid, sizeof(int));
-      s++;
-      memcpy(*out + s * sizeof(int), &cmd, sizeof(int));
-      s++;
-      memcpy(*out + s * sizeof(int), cmdtext, 1 + strlen(cmdtext));
-    }
+    memset(p, 0, *nbyte);
+    //@totalbytes: 4 bytes (sizeof(int)), mandatory
+    //@session:    4 bytes(sizeof(int)), mandatory
+    //@processID:  4 bytes, mandatory
+    //@cmdID:      4 bytes, mandatory
+    //@cmdText:    unpredictable, optional
+    p->nbyte = *nbyte;
+    p->sess = sess;
+    p->pid = (unsigned int) getpid();
+    p->cmd_id = cmd;
+    memcpy(&(p->cmd), cmdtext, 1 + strlen(cmdtext));
+
+    *out = (char*) p;
   }
   while(0);
   return err;
