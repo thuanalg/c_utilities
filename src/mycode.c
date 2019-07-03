@@ -120,7 +120,10 @@ int _X(xyz_register)(int *sess)
   int err = 0;
   do
   {
-
+		//Prepare command
+		//
+		XYZ_COMMAND *out = 0;
+		_X(*sess, CM_REGISTER, "", &out);
   }
   while(0);
   return err;
