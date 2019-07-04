@@ -11,6 +11,7 @@
 
 typedef enum {
   CM_REGISTER,
+  CM_UNREGISTER,
   CM_QUERY,
   
   CM_EXIT,
@@ -38,6 +39,8 @@ typedef struct
 }
 XYZ_GROUP_COMMAND;
 
+static pthread_mutex_t *xyz_mtx_cmd = 0;
+
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        ( 1024 * 1024)
@@ -51,22 +54,26 @@ static int _X(init_service)(char *path, void **, int);
 static int _X(init_shm_mtx)(char*);
 static int _X(rem_sess)(int sess);
 static int _X(xyz_register)(int *sess);
-static int _X(xyz_cmd_fmt)(int sess, int cmd, 
+static int _X(xyz_unregister)(int sess);
+static int _X(xyz_cmd_fmt)(int sess, int cmdid, 
   char *cmdtext, XYZ_COMMAND **out);
+static int _X(xyz_send_cmd)(XYZ_COMMAND *cmd);
 /************************************************************************
 * Format of memory segment
 *      @COMMANFD|@DATARESULT
 *      sizeof(@COMMAND) = 50 * 1024 (50 KB)
 *      sizeof(@DATARESULT) = (1024 - 50) * 1024 == (1024 - 50) KB.
 * @COMMAND detail:
-*    mutex|lockingId|totalcmds|list_commands
+*    mutex|processlockingId|totalcmdsize|list_commands
 *    @mutex: sizeof(mutex), mandatory. Fixed size
-     @lockingId: process Id owns this segment memory. Fixed size =
+     @processlockingId: process Id owns this segment memory. Fixed size =
                  sizeof(int)
-*    @totalZcommands: sizeof(int), the size of total current command(s)  
+*    @totalcmdsize: sizeof(int), the size of total current command(s)  
 *                    ,mandatory. Fixed size.
 *    @list_commands: a group command(s), dynamic size. 
 *                      UTF-8 referrence
+* @DATARESULT detail
+    mutex|cmdid|processid|totalsize|the_UTF-8_chain
 ************************************************************************/
 
 
@@ -115,12 +122,77 @@ char *cmdtext, XYZ_COMMAND **out)
   return err;
 }
 
+int _X(xyz_send_cmd)(XYZ_COMMAND *cmd)
+{
+  int err = 0;
+  pthread_mutex_t *p = xyz_mtx_cmd;
+  do
+  {
+    if(p)
+    {
+      err = __LINE__;
+      break;
+    }
+    err = pthread_mutex_lock(p);
+    if(err)
+    {
+      break;
+    }
+    {
+
+    }
+    err = pthread_mutex_unlock(p);
+    if(err)
+    {
+      break;
+    }
+  }
+  while(0);
+  return err;
+}
+
 int _X(xyz_register)(int *sess)
+{
+  int err = 0;
+  XYZ_COMMAND *cmdpre = 0;
+  do
+  {
+    int pid = 0;
+    if(!sess)
+    {
+      err = __LINE__;
+      break;
+    }
+    pid = (int)getpid();
+    //Send a registering command_. 
+    //ntthuan
+    //Session, command id, cmd text, output
+    err = _X(xyz_cmd_fmt)(pid, CM_REGISTER, "", &cmdpre);
+    if(err || !cmdpre)
+    {
+      break;
+    }
+    _X(xyz_send_cmd)(cmdpre);
+    if(err)
+    {
+      break;
+    }
+    *sess = pid;
+  }
+  while(0);
+  if(cmdpre)
+  {
+    free(cmdpre);
+  }
+  return err;
+}
+
+int _X(xyz_unregister)(int sess)
 {
   int err = 0;
   do
   {
-
+    //Send unregistering command_
   }
   while(0);
   return err;
