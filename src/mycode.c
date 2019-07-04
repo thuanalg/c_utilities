@@ -9,10 +9,12 @@
 #include <pthread.h>
 
 
+typedef int (*xyz_callback)(void *data, int argc, char **argv, char **azColName);
 typedef enum {
   CM_REGISTER,
   CM_UNREGISTER,
   CM_QUERY,
+  
   
   CM_EXIT,
 } XYZ_COMM_;
@@ -58,6 +60,10 @@ static int _X(xyz_unregister)(int sess);
 static int _X(xyz_cmd_fmt)(int sess, int cmdid, 
   char *cmdtext, XYZ_COMMAND **out);
 static int _X(xyz_send_cmd)(XYZ_COMMAND *cmd);
+
+int _X(xyz_exec)(int sess, const char *sql,  
+  xyz_callback cb, void *data, char **errmsg);
+
 /************************************************************************
 * Format of memory segment
 *      @COMMANFD|@DATARESULT
@@ -322,6 +328,18 @@ int _X(init_shm_mtx)(char *obj)
     {
       break;
     }
+  }
+  while(0);
+  return err;
+}
+
+int _X(xyz_exec)(int sess, const char *sql, xyz_callback cb, void *data, char **errmsg)
+{
+  int err = 0;
+  XYZ_COMMAND *out = 0;
+  do
+  {
+    _X(xyz_cmd_fmt)(sess, CM_QUERY, (char*)sql, &out);
   }
   while(0);
   return err;
