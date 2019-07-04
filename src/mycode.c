@@ -193,6 +193,8 @@ int _X(xyz_unregister)(int sess)
   do
   {
     //Send unregistering command_
+		//Prepare command
+		//
   }
   while(0);
   return err;
