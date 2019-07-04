@@ -46,8 +46,13 @@ static pthread_mutex_t *xyz_mtx_cmd = 0;
 #define PRIVATE_NAME_UTV  "/5112052a-02a6-4818-ac42-2de914ef5700_"
 #define UTV_KHL_MODE      (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 #define UTV_KHL_SZ        ( 1024 * 1024)
-#define UTV_CMD_SZ        ( 50 * 1024)
+#define UTV_CMD_SZ        ( 10   * 1024)
+
+#define UTV_SQL_SZ        ( 40   * 1024)
 #define UTV_RES_SZ        ( UTV_KHL_SZ - UTV_CMD_SZ)
+
+#define UTV_START_POINT_SQL   ( UTV_CMD_SZ )
+#define UTV_START_POINT_RES   ( UTV_CMD_SZ + UTV_SQL_SZ)      
 static void * data_shm_xyz = 0;
 static char my_key[1024];
 
@@ -293,7 +298,7 @@ int _X(init_service)(char *path, void **out, int sz)
     memset((*out), 0, UTV_KHL_SZ);
     {
       char *cmd_mtx = (char*)(*out); 
-      char *res_mtx = cmd_mtx + UTV_CMD_SZ;
+      char *res_mtx = cmd_mtx + UTV_START_POINT_SQL;;
       err  = _X(init_shm_mtx)(cmd_mtx);
       err  = _X(init_shm_mtx)(res_mtx);
     }
@@ -339,7 +344,11 @@ int _X(xyz_exec)(int sess, const char *sql, xyz_callback cb, void *data, char **
   XYZ_COMMAND *out = 0;
   do
   {
-    _X(xyz_cmd_fmt)(sess, CM_QUERY, (char*)sql, &out);
+    err = _X(xyz_cmd_fmt)(sess, CM_QUERY, (char*)sql, &out);
+    if(err)
+    {
+      break;
+    }
   }
   while(0);
   return err;
